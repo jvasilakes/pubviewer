@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <script type="text/javascript">
+
+    function getRandomColor() {
+        var letters = '0123456789ABCDEF';
+        var color = '#';
+        for (var i = 0; i < 6; i++) {
+            color += letters[Math.floor(Math.random() * 16)];
+          }
+        return color;
+    }
+
+    function highlight(text, color){
+        hl = "<span class='highlight' style='background-color:" +
+             color + "'>" + text + "</span>";
+        return(hl);
+    }
+
+    function highlightSpans(text, spans) {
+        var highlighted_spans = [];
+        var innerHTML = "";
+        var prev = 0
+        var cui2color = Object();
+        var color = undefined;
+        for (var i = 0; i < spans.length; i++) {
+            span = spans[i];
+            start = span[0];
+            end = span[1];
+            cui = span[2];
+            innerHTML = innerHTML + text.substring(prev, start);
+            var substr = text.substring(start, end);
+            if (cui in cui2color) {
+                color = cui2color[cui];
+            } else {
+                color = getRandomColor();
+                cui2color[cui] = color;
+            }
+            innerHTML = innerHTML + highlight(substr, color);
+            prev = end;
+        }
+        innerHTML = innerHTML + text.substring(prev);
+        return(innerHTML);
+    }
+
+    function readInputFile() {
+        var fr=new FileReader(); 
+        fr.onload = function(fileEvent) {
+            var text = fileEvent.target.result;
+            var lines = text.split('\n');
+            text = parsePubTator(lines);
+            document.getElementById("output").innerHTML = text;
+            var lines = text.split('\n');
+        };
+        var file = document.getElementById("inputfile").files[0];
+        fr.readAsText(file, "utf-8");
+    }
+
+    function parsePubTator(lines) {
+        var innerHTML = "";
+        var curr_pmid = "";
+        var currHTML = "";
+        var curr_spans = [];
+        var curr_cuis = new Set();
+        for (var i = 0; i < lines.length; i++) {
+            line = lines[i];
+            if (line == "") {
+                currHTML = highlightSpans(currHTML, curr_spans);
+                innerHTML = innerHTML + "<b>" + curr_pmid + "</b><br>" +
+                            currHTML + "<br><br>";
+                curr_pmid = "";
+                currHTML = "";
+                curr_spans = [];
+                curr_cuis = new Set();
+            } else if (line.search(/\|[ta]\|/) != -1) {
+                text = line.split('|')[2];
+                currHTML = currHTML + "\n" + text;
+            } else {
+                fields = line.split('\t');
+                curr_pmid = fields[0];
+                start = Number(fields[1]);
+                end = Number(fields[2]);
+                cui = fields[5];
+                curr_spans.push([start+1, end+1, cui]);
+                curr_cuis.add(cui);
+            }
+        }
+        return(innerHTML);
+    }
+    </script>
+</head>
+<body>
+
+<h1>PubTator Annotation Viewer</h1>
+    <input type="file" name="inputfile" id="inputfile"> 
+    <input type="button" name="submit" id="submit" value="Submit"
+           onclick="readInputFile()">
+    <br><br>
+   
+    <div id="output"></div> 
+</form>
+
+</body>
+</html>
+
