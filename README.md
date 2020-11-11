@@ -7,3 +7,5 @@ to do this. It's a single HTML file with some Javascript. Open it in your
 favorite browser, point it to a PubTator formatted file, and get viewing.
 
 Each color represents a unique label ID. Hover over an annotation to see the ID.
+
+![pubviewer screenshot](https://raw.githubusercontent.com/jvasilakes/pubviewer/master/pubviewer.png)
