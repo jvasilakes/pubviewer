@@ -14,9 +14,10 @@
         return color;
     }
 
-    function highlight(text, color){
-        hl = "<span class='highlight' style='background-color:" +
-             color + "'>" + text + "</span>";
+    function highlight(text, cui, color){
+        hl = "<span id='" + cui + "' title='" + cui + 
+             "' class='highlight' style='background-color:" + color + 
+             "'>" + text + "</span>";
         return(hl);
     }
 
@@ -39,10 +40,46 @@
                 color = getRandomColor();
                 cui2color[cui] = color;
             }
-            innerHTML = innerHTML + highlight(substr, color);
+            innerHTML = innerHTML + highlight(substr, cui, color);
             prev = end;
         }
         innerHTML = innerHTML + text.substring(prev);
+        return(innerHTML);
+    }
+
+    function parsePubTator(lines) {
+        var max_pmids = document.getElementById("max_pmids").value;
+        var num_pmids_seen = 0;
+        var innerHTML = "";
+        var curr_pmid = "";
+        var currHTML = "";
+        var curr_spans = [];
+        var curr_cuis = new Set();
+        for (var i = 0; i < lines.length; i++) {
+            line = lines[i];
+            if (line == "") {
+                currHTML = highlightSpans(currHTML, curr_spans);
+                innerHTML = innerHTML + "<b>PMID: " + curr_pmid + "</b><br>" +
+                            currHTML + "<br><br>";
+                curr_pmid = "";
+                currHTML = "";
+                curr_spans = [];
+                curr_cuis = new Set();
+                if (num_pmids_seen >= max_pmids) break;
+            } else if (line.search(/\|[ta]\|/) != -1) {
+                if (line.search(/\|t\|/) != -1) num_pmids_seen += 1;
+                text = line.split('|')[2];
+                currHTML = currHTML + "\n" + text;
+            } else {
+                fields = line.split('\t');
+                curr_pmid = fields[0];
+                start = Number(fields[1]);
+                end = Number(fields[2]);
+                cui = fields[5];
+                curr_spans.push([start+1, end+1, cui]);
+                curr_cuis.add(cui);
+            }
+        }
         return(innerHTML);
     }
 
@@ -59,44 +96,14 @@
         fr.readAsText(file, "utf-8");
     }
 
-    function parsePubTator(lines) {
-        var innerHTML = "";
-        var curr_pmid = "";
-        var currHTML = "";
-        var curr_spans = [];
-        var curr_cuis = new Set();
-        for (var i = 0; i < lines.length; i++) {
-            line = lines[i];
-            if (line == "") {
-                currHTML = highlightSpans(currHTML, curr_spans);
-                innerHTML = innerHTML + "<b>" + curr_pmid + "</b><br>" +
-                            currHTML + "<br><br>";
-                curr_pmid = "";
-                currHTML = "";
-                curr_spans = [];
-                curr_cuis = new Set();
-            } else if (line.search(/\|[ta]\|/) != -1) {
-                text = line.split('|')[2];
-                currHTML = currHTML + "\n" + text;
-            } else {
-                fields = line.split('\t');
-                curr_pmid = fields[0];
-                start = Number(fields[1]);
-                end = Number(fields[2]);
-                cui = fields[5];
-                curr_spans.push([start+1, end+1, cui]);
-                curr_cuis.add(cui);
-            }
-        }
-        return(innerHTML);
-    }
     </script>
 </head>
 <body>
 
 <h1>PubTator Annotation Viewer</h1>
-    <input type="file" name="inputfile" id="inputfile"> 
-    <input type="button" name="submit" id="submit" value="Submit"
+    PubTator File: <input type="file" name="inputfile" id="inputfile"><br>
+    Maximum Documents: <input type="text" name="max_pmids" id="max_pmids" value=10><br>
+    <input type="button" name="submit" id="submit" value="View"
            onclick="readInputFile()">
     <br><br>
    
